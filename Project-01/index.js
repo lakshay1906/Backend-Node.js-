@@ -4,11 +4,43 @@
 const express = require("express");
 const users = require("./MOCK_DATA.json");
 const fs = require("fs");
+const mongo = require("mongoose");
+const { type } = require("os");
 
 const app = express();
 const PORT = 1906;
 
 app.use(express.urlencoded({ extended: false }));
+
+app.use(express.json());
+
+// Schema
+const userSchema = new mongo.Schema({
+  first_name: {
+    type: String,
+    required: true,
+  },
+  last_name: {
+    type: String,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  job_title: {
+    type: String,
+  },
+  gender: {
+    type: String,
+  },
+});
+
+const User = mongo.model("user", userSchema);
+mongo
+  .connect("mongodb://127.0.0.1:27017/PROJECT-01")
+  .then(() => console.log("MongoDB Connected"))
+  .catch(() => console.log("MongoDB error"));
 
 app.get("/", (req, res) => {
   return res.json({
@@ -66,23 +98,52 @@ app
     }
   });
 
-app.post("/createUser", (req, res) => {
-  console.log(req.body);
-  let largest = 0;
-  for (const element of users) {
-    if (element.id > largest) {
-      largest = element.id;
+app.post("/createUser", async (req, res) => {
+  // let largest = 0;
+  // for (const element of users) {
+  //   if (element.id > largest) {
+  //     largest = element.id;
+  //   }
+  // }
+  // const body = req.body;
+  // const result = await User.create(
+  //   {
+  //     first_name: body.first_name,
+  //     last_name: body.last_name,
+  //     email: body.email,
+  //     gender: body.gender,
+  //     job_title: body.job_title,
+  //   },
+  //   { timestamps: true }
+  // );
+  // console.log(`result: ${result}`);
+  // return res.status(201).json({ msg: "User created" });
+  try {
+    const { first_name, last_name, email, gender, job_title } = req.body;
+    console.log(req.body); // To see what data is being received
+
+    if (!first_name || !email) {
+      return res
+        .status(400)
+        .json({ error: "First name and email are required" });
     }
+
+    // Create a new user using the request body
+    const result = await User.create({
+      first_name,
+      last_name,
+      email,
+      gender,
+      job_title,
+    });
+
+    return res
+      .status(201)
+      .json({ msg: "User created successfully", user: result });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ error: error.message });
   }
-  users.push({ id: largest + 1, ...req.body });
-  fs.writeFile("./MOCK_DATA.json", JSON.stringify(users), (err, data) => {
-    if (err) {
-      throw err;
-    } else {
-      //   res.sendStatus(201);
-      return res.json({ status: "done", userId: largest + 1 });
-    }
-  });
 });
 
 app.listen(PORT, () => {
