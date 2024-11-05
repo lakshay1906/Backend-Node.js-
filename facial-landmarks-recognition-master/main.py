@@ -4,7 +4,7 @@ import dlib
 import cv2
 import numpy as np
 
-# Load dlib's detector and predictor
+# Load dlib detector and predictor
 p = "shape_predictor_68_face_landmarks.dat"
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(p)
